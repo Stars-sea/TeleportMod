@@ -1,21 +1,16 @@
 modLoader = "javafml"
-loaderVersion = "[35,)"
+loaderVersion = "[32,)"
 license = "MIT"
 
 [[mods]]
 modId = "teleport"
 version = "1.0.1"
 displayName = "Teleport"
-# A URL to query for updates for this mod. See the JSON update specification <here>
-#updateJSONURL="http://myurl.me/" #optional
-# A URL for the "homepage" for this mod, displayed in the mod UI
-displayURL="https://space.bilibili.com/329963941" #optional
+#updateJSONURL="http://myurl.me/" #TODO
+displayURL="https://space.bilibili.com/329963941"
 # A file name (in the root of the mod JAR) containing a logo for display
-#logoFile="teleport.png" #optional
-# A text field displayed in the mod UI
-#credits="Thanks for this example mod goes to Java" #optional
-# A text field displayed in the mod UI
-authors = "Stars_sea" #optional
+#logoFile="teleport.png" #TODO
+authors = "Stars_sea"
 description = '''
 相比 tp, 更加 "科学" 的传送
 '''
@@ -23,7 +18,7 @@ description = '''
 [[dependencies.teleport]]
 modId = "forge"
 mandatory = true
-versionRange = "[35,)"
+versionRange = "[32,)"
 ordering = "NONE"
 side = "BOTH"
 
