@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+
+  "pattern": [
+    "OOO"
+  ],
+  "key": {
+    "O": {
+      "item": "teleport:broken_ender_pearl"
+    }
+  },
+
+  "result": {
+    "item": "minecraft:ender_pearl",
+    "count": 1
+  }
+}
