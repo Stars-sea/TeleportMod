@@ -14,7 +14,7 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle'
 
 group = 'com.github.star_sea'
-version = '1.0.0'
+version = '1.0.1'
 archivesBaseName = 'teleport'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
