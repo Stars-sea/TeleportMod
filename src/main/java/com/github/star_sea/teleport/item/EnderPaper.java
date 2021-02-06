@@ -1,23 +1,30 @@
 package com.github.star_sea.teleport.item;
 
-import com.github.star_sea.teleport.util.*;
+import com.github.star_sea.teleport.util.Pos;
+import com.github.star_sea.teleport.util.PosCache;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.enchantment.*;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.item.*;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.stats.Stats;
-import net.minecraft.util.*;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.FoodStats;
+import net.minecraft.util.Hand;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.api.distmarker.*;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
-import java.util.Random;
 
 @ParametersAreNonnullByDefault
 public class EnderPaper extends Item {
@@ -26,8 +33,14 @@ public class EnderPaper extends Item {
         super(new Properties().group(ItemGroup.MATERIALS).setNoRepair().maxDamage(100));
     }
 
+    @Nonnull
     protected static CompoundNBT getChildNBT(ItemStack stack) {
         return stack.getOrCreateChildTag("teleport");
+    }
+
+    protected void onBroken(PlayerEntity player) {
+        player.addItemStackToInventory(new ItemStack(Items.PAPER));
+        player.addItemStackToInventory(ItemManager.ender_pearl_fragment.get().getRandomFragments());
     }
 
     @Override
@@ -38,7 +51,7 @@ public class EnderPaper extends Item {
 
         CompoundNBT nbt = getChildNBT(stack);
         if (PosCache.hasCache(nbt))
-            tooltip.add(PosCache.get(nbt).getTpTextComponent());
+            tooltip.add(PosCache.get(nbt).getText());
     }
 
     @Nonnull
@@ -54,40 +67,26 @@ public class EnderPaper extends Item {
             // 检查是否符合保存条件
             if (foodStats.getFoodLevel() < 6) {
                 if (!worldIn.isRemote)
-                    playerIn.sendMessage(Pos.getSaveFailed(pos, stack), Util.DUMMY_UUID);
+                    playerIn.sendMessage(pos.getText().saveFailed(stack), Util.DUMMY_UUID);
                 return ActionResult.resultFail(stack);
             }
 
             PosCache.put(nbt, pos);
             foodStats.setFoodLevel(foodStats.getFoodLevel() - 6);
 
-            if (!worldIn.isRemote) playerIn.sendMessage(Pos.getSaveSucceed(pos, stack), Util.DUMMY_UUID);
+            if (!worldIn.isRemote) playerIn.sendMessage(pos.getText().saveSucceed(stack), Util.DUMMY_UUID);
         } else {
             Pos pos = PosCache.get(nbt);
-            pos.teleport(playerIn);
+            if (pos.teleport(playerIn).flag) {
+                stack.damageItem(1, playerIn, this::onBroken);
 
-            stack.damageItem(1, playerIn, player -> {
-                player.sendBreakAnimation(EquipmentSlotType.MAINHAND);
-                player.addItemStackToInventory(new ItemStack(Items.PAPER));
-
-                // 10%: 0 个    40%: 1 个    30%: 2 个    20%: 3 个
-                float probability = new Random().nextFloat();
-                int count;
-                if (probability <= 0.1) count = 0;
-                else if (0.1 < probability && probability <= 0.5) count = 1;
-                else if (0.5 < probability && probability <= 0.8) count = 2;
-                else count = 3;
-                player.addItemStackToInventory(new ItemStack(ItemManager.broken_ender_pearl.get(), count));
-            });
-
-            playerIn.addStat(Stats.ITEM_USED.get(this));
-            playerIn.getCooldownTracker().setCooldown(this, 40);
-            playerIn.sendStatusMessage(Pos.getTpSuccess(pos), true);
-
-            // 粒子特效
-            pos.addParticles(worldIn);
+                playerIn.addStat(Stats.ITEM_USED.get(this));
+                playerIn.getCooldownTracker().setCooldown(this, 40);
+                playerIn.sendStatusMessage(pos.getText().tpSuccess(), true);
+                pos.addParticles(worldIn);
+            }
+            else return ActionResult.resultFail(stack);
         }
-
         return ActionResult.resultConsume(stack);
     }
 
@@ -98,6 +97,6 @@ public class EnderPaper extends Item {
 
     @Override
     public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {
-        return toRepair.getDamage() > 0 && repair.getItem() == ItemManager.broken_ender_pearl.get();
+        return repair.getItem() == ItemManager.ender_pearl_fragment.get();
     }
 }

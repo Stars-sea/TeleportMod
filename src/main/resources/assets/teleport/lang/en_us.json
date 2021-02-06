@@ -1,5 +1,5 @@
 {
-  "msg.teleport.back": "Click to teleport",
+  "msg.teleport.click_to_tp": "Click to teleport",
   "msg.teleport.back_tip": "Enter %s to back to where you last died %s.",
   "msg.teleport.back_err": "Sorry, server can't find the last place of death.",
 
@@ -10,5 +10,5 @@
   "msg.teleport.save_failed": "Failed to save %s to %s",
 
   "item.teleport.ender_paper": "Ender Paper",
-  "item.teleport.broken_ender_pearl": "Broken Ender Pearl"
+  "item.teleport.ender_pearl_fragment": "Ender Pearl Fragment"
 }

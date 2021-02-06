@@ -1,5 +1,5 @@
 {
-  "msg.teleport.back": "点击传送",
+  "msg.teleport.click_to_tp": "点击传送",
   "msg.teleport.back_tip": "输入 %s 回到上次的死亡地点 %s",
   "msg.teleport.back_err": "服务器找不到上次死亡的地点",
 
@@ -10,5 +10,5 @@
   "msg.teleport.save_failed": "未能将 %s 保存到 %s",
 
   "item.teleport.ender_paper": "末影纸",
-  "item.teleport.broken_ender_pearl": "损坏的末影珍珠"
+  "item.teleport.ender_pearl_fragment": "末影珍珠碎片"
 }

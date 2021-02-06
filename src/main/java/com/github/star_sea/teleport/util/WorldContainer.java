@@ -1,6 +1,6 @@
 package com.github.star_sea.teleport.util;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
@@ -23,9 +23,9 @@ public final class WorldContainer implements INBTSerializable<StringNBT> {
 
     public WorldContainer(World world) { this(world.getDimensionKey()); }
 
-    public WorldContainer(PlayerEntity player) { this(player.getEntityWorld()); }
+    public WorldContainer(Entity player) { this(player.getEntityWorld()); }
 
-    public WorldContainer(StringNBT nbt) { deserializeNBT(nbt); }
+    public WorldContainer(String location) { this.location = location; }
 
     @Nonnull
     public ResourceLocation getLocation() { return new ResourceLocation(location); }

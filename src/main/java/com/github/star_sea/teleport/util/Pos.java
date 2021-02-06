@@ -1,49 +1,54 @@
 package com.github.star_sea.teleport.util;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.util.*;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.*;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.INBTSerializable;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Random;
 
+@ParametersAreNonnullByDefault
 public final class Pos implements INBTSerializable<CompoundNBT> {
     public WorldContainer world;
     public double x;
     public double y;
     public double z;
-    public float yaw;
-    public float pitch;
+    public float yaw    = -1F;
+    public float pitch  = -1F;
 
-    public Pos(PlayerEntity player) {
-        world   = new WorldContainer(player);
-        yaw     = player.getYaw(1F);
-        pitch   = player.getPitch(1F);
-
-        Vector3d pos = player.getPositionVec();
-        x = pos.x;
-        y = pos.y;
-        z = pos.z;
+    public Pos(WorldContainer worldContainer, Vector3d vector3d) {
+        world   = worldContainer;
+        x       = vector3d.x;
+        y       = vector3d.y;
+        z       = vector3d.z;
     }
 
-    public Pos(CompoundNBT nbt) {
-        deserializeNBT(nbt);
+    public Pos(Entity entity) {
+        this(new WorldContainer(entity), entity.getPositionVec());
+        yaw     = entity.getYaw(1F);
+        pitch   = entity.getPitch(1F);
     }
+
+    public Pos(CompoundNBT nbt) { deserializeNBT(nbt); }
 
     public ServerWorld getWorld() { return world.getWorld(); }
 
+    public float getYaw(Entity entity) { return yaw == -1F ? entity.getYaw(1F) : yaw; }
+
+    public float getPitch(Entity entity) { return pitch == -1F ? entity.getPitch(1F) : pitch; }
+
     public void addParticles(World world) {
-        Random random = new Random();
+        Random random = world.getRandom();
         for (int i = 0; i < 32; ++i) {
             world.addParticle(ParticleTypes.PORTAL, x, y + random.nextDouble() * 2.0D, z,
                     random.nextGaussian(), 0.0D, random.nextGaussian());
@@ -61,7 +66,7 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
             return TpResult.Failed;
 
         ServerWorld world = getWorld();
-        player.teleport(world, x, y, z, yaw, pitch);
+        player.teleport(world, x, y, z, getYaw(player), getPitch(player));
 
         // 播放声音
         Random random = player.getRNG();
@@ -79,46 +84,10 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
         return String.format("/execute in %s run tp %s %s %s", world.getWorldFullName(), x, y, z);
     }
 
-    public IFormattableTextComponent getBackTextComponent() {
-        return new StringTextComponent("/back").modifyStyle(style ->
-                style.setFormatting(TextFormatting.GREEN)
-                        .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/back"))
-                        .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                new TranslationTextComponent("msg.teleport.back"))));
-    }
+    @Nonnull
+    public PosText getText() { return new PosText(this); }
 
-    public IFormattableTextComponent getTpTextComponent() {
-        return new StringTextComponent(toSimpleString()).modifyStyle(style ->
-                style.setFormatting(TextFormatting.GREEN)
-                        .setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, getTpCommand()))
-                        .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                new TranslationTextComponent("msg.teleport.back"))));
-    }
-
-    public static IFormattableTextComponent getBackTip(Pos pos) {
-        return new TranslationTextComponent("msg.teleport.back_tip",
-                pos.getBackTextComponent(), pos.getTpTextComponent());
-    }
-
-    public static IFormattableTextComponent getTpSuccess(Pos pos) {
-        return new TranslationTextComponent("msg.teleport.tp_succeed", pos.getTpTextComponent());
-    }
-
-    public static IFormattableTextComponent getTpFail(@Nullable Pos pos) {
-        Object pos_s = pos != null ? pos.getTpTextComponent() : "";
-        return new TranslationTextComponent("msg.teleport.tp_failed",  pos_s).mergeStyle(TextFormatting.RED);
-    }
-
-    public static IFormattableTextComponent getSaveSucceed(Pos pos, ItemStack stack) {
-        return new TranslationTextComponent("msg.teleport.save_succeed",
-                pos.getTpTextComponent(), stack.getTextComponent());
-    }
-
-    public static IFormattableTextComponent getSaveFailed(Pos pos, ItemStack stack) {
-        return new TranslationTextComponent("msg.teleport.save_failed",
-                pos.toSimpleString(), stack.getTextComponent());
-    }
-
+    @Nonnull
     @Override
     public CompoundNBT serializeNBT() {
         CompoundNBT nbt = new CompoundNBT();
@@ -133,7 +102,7 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
 
     @Override
     public void deserializeNBT(CompoundNBT nbt) {
-        world   = new WorldContainer((StringNBT) nbt.get("world"));
+        world   = new WorldContainer(nbt.getString("world"));
         x       = nbt.getDouble("x");
         y       = nbt.getDouble("y");
         z       = nbt.getDouble("z");

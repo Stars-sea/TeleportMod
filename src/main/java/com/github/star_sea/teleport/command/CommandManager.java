@@ -14,6 +14,6 @@ public final class CommandManager {
     @SubscribeEvent
     public static void onCommandRegistering(FMLServerStartingEvent event) {
         CommandDispatcher<CommandSource> dispatcher = event.getServer().getCommandManager().getDispatcher();
-        dispatcher.register(BackCommand.builder());
+        dispatcher.register(BackCommand.register());
     }
 }
