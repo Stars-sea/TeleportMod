@@ -4,6 +4,7 @@ import com.github.star_sea.teleport.util.Pos;
 import com.github.star_sea.teleport.util.PosCache;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -78,7 +79,8 @@ public class EnderPaper extends Item {
         } else {
             Pos pos = PosCache.get(nbt);
             if (pos.teleport(playerIn).flag) {
-                stack.damageItem(1, playerIn, this::onBroken);
+                if (EnchantmentHelper.getEnchantmentLevel(Enchantments.INFINITY, stack) == 0)
+                    stack.damageItem(1, playerIn, this::onBroken);
 
                 playerIn.addStat(Stats.ITEM_USED.get(this));
                 playerIn.getCooldownTracker().setCooldown(this, 40);
@@ -92,8 +94,21 @@ public class EnderPaper extends Item {
 
     @Override
     public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-        return Enchantments.MENDING.getName().equals(enchantment.getName());
+        /* 可附魔 无限, 耐久, 经验修补; 但 无限 不可与其他两个并存 */
+        if (EnchantmentHelper.getEnchantmentLevel(Enchantments.INFINITY, stack) > 0)
+            return false;
+        if (EnchantmentHelper.getEnchantmentLevel(Enchantments.UNBREAKING, stack) > 0 ||
+            EnchantmentHelper.getEnchantmentLevel(Enchantments.MENDING,    stack) > 0) {
+            return Enchantments.INFINITY != enchantment;
+        }
+
+        return  Enchantments.MENDING    == enchantment ||
+                Enchantments.UNBREAKING == enchantment ||
+                Enchantments.INFINITY   == enchantment;
     }
+
+    @Override
+    public int getItemEnchantability(ItemStack stack) { return 1; }
 
     @Override
     public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {

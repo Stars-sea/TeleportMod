@@ -1,5 +1,6 @@
 package com.github.star_sea.teleport.util;
 
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -9,9 +10,11 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.INBTSerializable;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -26,11 +29,15 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
     public float yaw    = -1F;
     public float pitch  = -1F;
 
-    public Pos(WorldContainer worldContainer, Vector3d vector3d) {
+    public Pos(WorldContainer worldContainer, double x, double y, double z) {
         world   = worldContainer;
-        x       = vector3d.x;
-        y       = vector3d.y;
-        z       = vector3d.z;
+        this.x  = x;
+        this.y  = y;
+        this.z  = z;
+    }
+
+    public Pos(WorldContainer worldContainer, Vector3d vector3d) {
+        this(worldContainer, vector3d.x, vector3d.y, vector3d.z);
     }
 
     public Pos(Entity entity) {
@@ -46,6 +53,11 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
     public float getYaw(Entity entity) { return yaw == -1F ? entity.getYaw(1F) : yaw; }
 
     public float getPitch(Entity entity) { return pitch == -1F ? entity.getPitch(1F) : pitch; }
+
+    @Nonnull
+    public Pos add(double x, double y, double z) {
+        return new Pos(world, this.x + x, this.y + y, this.z + z);
+    }
 
     public void addParticles(World world) {
         Random random = world.getRandom();
@@ -76,12 +88,33 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
         return TpResult.Succeed;
     }
 
+    public int getRandomInt(int absMax) {
+        Random random = new Random();
+        int num = random.nextInt() % (absMax + 1);
+        return random.nextBoolean() ? num : -num;
+    }
+
+    @Nonnull
+    public Pos getRandomPos(int distance) {
+        return add(getRandomInt(distance), getRandomInt(distance), getRandomInt(distance));
+    }
+
+    @Nonnull
+    public Explosion explosion(Entity entity, float radius, boolean causesFire, Explosion.Mode mode) {
+        return getWorld().createExplosion(entity, x, y, z, radius, causesFire, mode);
+    }
+
     public String toSimpleString() {
         return String.format("%s: [%s %s %s]", world.getWorldName(), Math.round(x), Math.round(y), Math.round(z));
     }
 
     public String getTpCommand() {
         return String.format("/execute in %s run tp %s %s %s", world.getWorldFullName(), x, y, z);
+    }
+
+    @Nonnull
+    public BlockPos toBlockPos() {
+        return new BlockPos(Math.round(x), Math.round(y), Math.round(z));
     }
 
     @Nonnull
