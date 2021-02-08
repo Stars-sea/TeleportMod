@@ -1,6 +1,5 @@
 package com.github.star_sea.teleport.util;
 
-import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -14,39 +13,43 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Random;
 
 @ParametersAreNonnullByDefault
-public final class Pos implements INBTSerializable<CompoundNBT> {
-    public WorldContainer world;
-    public double x;
-    public double y;
-    public double z;
-    public float yaw    = -1F;
-    public float pitch  = -1F;
+public class Pos extends Vector3d implements INBTSerializable<CompoundNBT> {
+    public final WorldContainer world;
+    public final float yaw;
+    public final float pitch;
 
-    public Pos(WorldContainer worldContainer, double x, double y, double z) {
-        world   = worldContainer;
-        this.x  = x;
-        this.y  = y;
-        this.z  = z;
+    public Pos(WorldContainer world, double x, double y, double z, float yaw, float pitch) {
+        super(x, y, z);
+        this.world  = world;
+        this.yaw    = yaw;
+        this.pitch  = pitch;
     }
 
-    public Pos(WorldContainer worldContainer, Vector3d vector3d) {
-        this(worldContainer, vector3d.x, vector3d.y, vector3d.z);
+    public Pos(WorldContainer world, Vector3d vector3d, float yaw, float pitch) {
+        this(world, vector3d.x, vector3d.y, vector3d.z, yaw, pitch);
     }
 
     public Pos(Entity entity) {
-        this(new WorldContainer(entity), entity.getPositionVec());
-        yaw     = entity.getYaw(1F);
-        pitch   = entity.getPitch(1F);
+        this(new WorldContainer(entity), entity.getPositionVec(), entity.getYaw(1F), entity.getPitch(1F));
     }
 
-    public Pos(CompoundNBT nbt) { deserializeNBT(nbt); }
+    public Pos(CompoundNBT nbt) {
+        this(
+                new WorldContainer(nbt.getString("world")),
+                nbt.getDouble("x"),
+                nbt.getDouble("y"),
+                nbt.getDouble("z"),
+                nbt.getFloat("yaw"),
+                nbt.getFloat("pitch")
+        );
+    }
 
     public ServerWorld getWorld() { return world.getWorld(); }
 
@@ -55,9 +58,12 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
     public float getPitch(Entity entity) { return pitch == -1F ? entity.getPitch(1F) : pitch; }
 
     @Nonnull
-    public Pos add(double x, double y, double z) {
-        return new Pos(world, this.x + x, this.y + y, this.z + z);
+    public Pos add(double x, double y, double z, float yaw, float pitch) {
+        return new Pos(world, this.x + x, this.y + y, this.z + z, this.yaw + yaw, this.pitch + pitch);
     }
+
+    @Nonnull
+    public Pos add(Pos pos) { return add(pos.x, pos.y, pos.z, pos.yaw, pos.pitch); }
 
     public void addParticles(World world) {
         Random random = world.getRandom();
@@ -88,17 +94,6 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
         return TpResult.Succeed;
     }
 
-    public int getRandomInt(int absMax) {
-        Random random = new Random();
-        int num = random.nextInt() % (absMax + 1);
-        return random.nextBoolean() ? num : -num;
-    }
-
-    @Nonnull
-    public Pos getRandomPos(int distance) {
-        return add(getRandomInt(distance), getRandomInt(distance), getRandomInt(distance));
-    }
-
     @Nonnull
     public Explosion explosion(Entity entity, float radius, boolean causesFire, Explosion.Mode mode) {
         return getWorld().createExplosion(entity, x, y, z, radius, causesFire, mode);
@@ -110,11 +105,6 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
 
     public String getTpCommand() {
         return String.format("/execute in %s run tp %s %s %s", world.getWorldFullName(), x, y, z);
-    }
-
-    @Nonnull
-    public BlockPos toBlockPos() {
-        return new BlockPos(Math.round(x), Math.round(y), Math.round(z));
     }
 
     @Nonnull
@@ -134,14 +124,7 @@ public final class Pos implements INBTSerializable<CompoundNBT> {
     }
 
     @Override
-    public void deserializeNBT(CompoundNBT nbt) {
-        world   = new WorldContainer(nbt.getString("world"));
-        x       = nbt.getDouble("x");
-        y       = nbt.getDouble("y");
-        z       = nbt.getDouble("z");
-        yaw     = nbt.getFloat("yaw");
-        pitch   = nbt.getFloat("pitch");
-    }
+    public void deserializeNBT(CompoundNBT nbt) { throw new NotImplementedException(); }
 
     public enum TpResult {
         Succeed(true), Failed(false), Unknown(true);

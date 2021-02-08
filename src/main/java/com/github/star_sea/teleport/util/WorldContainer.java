@@ -14,7 +14,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
-public final class WorldContainer implements INBTSerializable<StringNBT> {
+public class WorldContainer implements INBTSerializable<StringNBT> {
     private String location;
 
     public WorldContainer(RegistryKey<World> worldKey) {

@@ -23,14 +23,12 @@ public class EnderPearlFragment extends Item {
     @Nonnull
     @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
-        ItemStack stack = playerIn.getHeldItem(handIn);
-        stack.shrink(1);
-
-        Random random = playerIn.getRNG();
         Pos pos = new Pos(playerIn);
-        pos.explosion(playerIn, random.nextInt() % 6, false, Explosion.Mode.NONE);
+        pos.explosion(playerIn, worldIn.getRandom().nextInt() % 6, false, Explosion.Mode.NONE);
         pos.addParticles(worldIn);
 
+        ItemStack stack = playerIn.getHeldItem(handIn);
+        stack.shrink(1);
         return ActionResult.resultConsume(stack);
     }
 

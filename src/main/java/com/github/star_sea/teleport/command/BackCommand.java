@@ -1,5 +1,6 @@
 package com.github.star_sea.teleport.command;
 
+import com.github.star_sea.teleport.Teleport;
 import com.github.star_sea.teleport.util.Pos;
 import com.github.star_sea.teleport.util.PosCache;
 import com.github.star_sea.teleport.util.PosText;
@@ -24,7 +25,7 @@ public class BackCommand {
         try {
             player = source.asPlayer();
         } catch (CommandSyntaxException e) {
-            e.printStackTrace();
+            Teleport.getLOGGER().error(e);
             source.sendErrorMessage(new StringTextComponent(e.getMessage()));
             return -1;
         }
