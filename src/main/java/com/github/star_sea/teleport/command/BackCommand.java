@@ -1,8 +1,8 @@
 package com.github.star_sea.teleport.command;
 
 import com.github.star_sea.teleport.Teleport;
-import com.github.star_sea.teleport.util.Pos;
 import com.github.star_sea.teleport.util.PosCache;
+import com.github.star_sea.teleport.util.PosContainer;
 import com.github.star_sea.teleport.util.PosText;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -36,14 +36,14 @@ public class BackCommand {
             return -2;
         }
 
-        Pos pos = PosCache.get(nbt);
-        if (pos.teleport(player).flag) {
-            player.sendMessage(pos.getText().tpSuccess(), Util.DUMMY_UUID);
+        PosContainer container = PosCache.get(nbt);
+        if (container.pos.teleport(player).flag) {
+            player.sendMessage(container.getText().tpSuccess(), Util.DUMMY_UUID);
             PosCache.remove(player);
             return 0;
         }
 
-        player.sendMessage(pos.getText().tpFail(), Util.DUMMY_UUID);
+        player.sendMessage(container.getText().tpFail(), Util.DUMMY_UUID);
         return 1;
     }
 

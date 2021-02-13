@@ -25,7 +25,6 @@ public class EnderPearlFragment extends Item {
     public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
         Pos pos = new Pos(playerIn);
         pos.explosion(playerIn, worldIn.getRandom().nextInt() % 6, false, Explosion.Mode.NONE);
-        pos.addParticles(worldIn);
 
         ItemStack stack = playerIn.getHeldItem(handIn);
         stack.shrink(1);

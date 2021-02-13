@@ -24,12 +24,12 @@ public class PosText extends StringTextComponent {
     protected static final HoverEvent ClickToTPEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT,
             new TranslationTextComponent("msg.teleport.click_to_tp"));
 
-    public PosText(@Nullable Pos pos) {
-        super(pos != null ? pos.toSimpleString() : "");
+    public PosText(@Nullable PosContainer container) {
+        super(container != null ? container.toString() : "");
         mergeStyle(TextFormatting.GREEN);
-        if (pos != null)
+        if (container != null)
             modifyStyle(style -> style.setHoverEvent(ClickToTPEvent)
-                    .setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, pos.getTpCommand())));
+                    .setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, container.pos.getTpCommand())));
     }
 
     public IFormattableTextComponent backTip() {

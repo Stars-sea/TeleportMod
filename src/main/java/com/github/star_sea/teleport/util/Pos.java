@@ -1,9 +1,11 @@
 package com.github.star_sea.teleport.util;
 
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
@@ -13,7 +15,6 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.INBTSerializable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -22,22 +23,18 @@ import java.util.Random;
 @ParametersAreNonnullByDefault
 public class Pos extends Vector3d implements INBTSerializable<CompoundNBT> {
     public final WorldContainer world;
-    public final float yaw;
-    public final float pitch;
 
-    public Pos(WorldContainer world, double x, double y, double z, float yaw, float pitch) {
+    public Pos(WorldContainer world, double x, double y, double z) {
         super(x, y, z);
         this.world  = world;
-        this.yaw    = yaw;
-        this.pitch  = pitch;
     }
 
-    public Pos(WorldContainer world, Vector3d vector3d, float yaw, float pitch) {
-        this(world, vector3d.x, vector3d.y, vector3d.z, yaw, pitch);
+    public Pos(WorldContainer world, Vector3d vector3d) {
+        this(world, vector3d.x, vector3d.y, vector3d.z);
     }
 
     public Pos(Entity entity) {
-        this(new WorldContainer(entity), entity.getPositionVec(), entity.getYaw(1F), entity.getPitch(1F));
+        this(new WorldContainer(entity), entity.getPositionVec());
     }
 
     public Pos(CompoundNBT nbt) {
@@ -45,32 +42,32 @@ public class Pos extends Vector3d implements INBTSerializable<CompoundNBT> {
                 new WorldContainer(nbt.getString("world")),
                 nbt.getDouble("x"),
                 nbt.getDouble("y"),
-                nbt.getDouble("z"),
-                nbt.getFloat("yaw"),
-                nbt.getFloat("pitch")
+                nbt.getDouble("z")
         );
     }
 
     public ServerWorld getWorld() { return world.getWorld(); }
 
-    public float getYaw(Entity entity) { return yaw == -1F ? entity.getYaw(1F) : yaw; }
-
-    public float getPitch(Entity entity) { return pitch == -1F ? entity.getPitch(1F) : pitch; }
-
-    @Nonnull
-    public Pos add(double x, double y, double z, float yaw, float pitch) {
-        return new Pos(world, this.x + x, this.y + y, this.z + z, this.yaw + yaw, this.pitch + pitch);
+    static int getRandomInt(int absMax) {
+        Random random = new Random();
+        int    rand   = random.nextInt();
+        return random.nextBoolean() ? rand : -rand;
     }
 
-    @Nonnull
-    public Pos add(Pos pos) { return add(pos.x, pos.y, pos.z, pos.yaw, pos.pitch); }
+    public Pos getRandomPos(int distance) {
+        return (Pos) add(getRandomInt(distance), getRandomInt(distance), getRandomInt(distance));
+    }
 
-    public void addParticles(World world) {
+    public boolean addParticles(BasicParticleType type, int times) {
+        ClientWorld world  = ServerHelper.getCurrentClientWorld();
+        if (world == null || world.getDimensionKey() != this.world.getRegistryKey()) return false;
+
         Random random = world.getRandom();
-        for (int i = 0; i < 32; ++i) {
-            world.addParticle(ParticleTypes.PORTAL, x, y + random.nextDouble() * 2.0D, z,
+        for (int i = 0; i < times; ++i) {
+            world.addParticle(type, x, y + random.nextDouble() * 2.0D, z,
                     random.nextGaussian(), 0.0D, random.nextGaussian());
         }
+        return true;
     }
 
     public TpResult teleport(PlayerEntity player) {
@@ -84,12 +81,13 @@ public class Pos extends Vector3d implements INBTSerializable<CompoundNBT> {
             return TpResult.Failed;
 
         ServerWorld world = getWorld();
-        player.teleport(world, x, y, z, getYaw(player), getPitch(player));
+        player.teleport(world, x, y, z, player.getYaw(1), player.getPitch(1));
 
         // 播放声音
         Random random = player.getRNG();
         world.playSound(null, x, y, z, SoundEvents.ITEM_CHORUS_FRUIT_TELEPORT,
                 SoundCategory.NEUTRAL, 0.5F, 0.4F / (random.nextFloat() * 0.4F + 0.8F));
+        addParticles(ParticleTypes.PORTAL, 32);
 
         return TpResult.Succeed;
     }
@@ -108,9 +106,6 @@ public class Pos extends Vector3d implements INBTSerializable<CompoundNBT> {
     }
 
     @Nonnull
-    public PosText getText() { return new PosText(this); }
-
-    @Nonnull
     @Override
     public CompoundNBT serializeNBT() {
         CompoundNBT nbt = new CompoundNBT();
@@ -118,13 +113,11 @@ public class Pos extends Vector3d implements INBTSerializable<CompoundNBT> {
         nbt.putDouble("x", x);
         nbt.putDouble("y", y);
         nbt.putDouble("z", z);
-        nbt.putFloat("yaw", yaw);
-        nbt.putFloat("pitch", pitch);
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(CompoundNBT nbt) { throw new NotImplementedException(); }
+    public void deserializeNBT(CompoundNBT nbt) { throw new RuntimeException(); }
 
     public enum TpResult {
         Succeed(true), Failed(false), Unknown(true);

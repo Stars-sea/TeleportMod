@@ -1,7 +1,9 @@
 package com.github.star_sea.teleport.item;
 
+import com.github.star_sea.teleport.util.NBTHelper;
 import com.github.star_sea.teleport.util.Pos;
 import com.github.star_sea.teleport.util.PosCache;
+import com.github.star_sea.teleport.util.PosContainer;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -34,11 +36,6 @@ public class EnderPaper extends Item {
         super(new Properties().group(ItemGroup.MATERIALS).setNoRepair().maxDamage(100));
     }
 
-    @Nonnull
-    protected static CompoundNBT getChildNBT(ItemStack stack) {
-        return stack.getOrCreateChildTag("teleport");
-    }
-
     protected void onBroken(PlayerEntity player) {
         player.addItemStackToInventory(new ItemStack(Items.PAPER));
         player.addItemStackToInventory(ItemManager.ender_pearl_fragment.get().getRandomFragments());
@@ -50,7 +47,7 @@ public class EnderPaper extends Item {
                                List<ITextComponent> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
 
-        CompoundNBT nbt = getChildNBT(stack);
+        CompoundNBT nbt = NBTHelper.getSubNBT(stack);
         if (PosCache.hasCache(nbt))
             tooltip.add(PosCache.get(nbt).getText());
     }
@@ -59,35 +56,37 @@ public class EnderPaper extends Item {
     @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
         ItemStack stack = playerIn.getHeldItem(handIn);
-        CompoundNBT nbt = getChildNBT(stack);
+        CompoundNBT nbt = NBTHelper.getSubNBT(stack);
 
         if (!PosCache.hasCache(nbt)) {
-            Pos pos = new Pos(playerIn);
-            FoodStats foodStats = playerIn.getFoodStats();
+            PosContainer container = new PosContainer(new Pos(playerIn));
+            FoodStats foodStats    = playerIn.getFoodStats();
 
             // 检查是否符合保存条件
             if (foodStats.getFoodLevel() < 6) {
                 if (!worldIn.isRemote)
-                    playerIn.sendMessage(pos.getText().saveFailed(stack), Util.DUMMY_UUID);
+                    playerIn.sendMessage(container.getText().saveFailed(stack), Util.DUMMY_UUID);
                 return ActionResult.resultFail(stack);
             }
 
-            PosCache.put(nbt, pos);
+            PosCache.put(nbt, container);
             foodStats.setFoodLevel(foodStats.getFoodLevel() - 6);
 
-            if (!worldIn.isRemote) playerIn.sendMessage(pos.getText().saveSucceed(stack), Util.DUMMY_UUID);
+            if (!worldIn.isRemote) playerIn.sendMessage(container.getText().saveSucceed(stack), Util.DUMMY_UUID);
         } else {
-            Pos pos = PosCache.get(nbt);
-            if (pos.teleport(playerIn).flag) {
+            PosContainer container = PosCache.get(nbt);
+            if (container.pos.teleport(playerIn).flag) {
                 if (EnchantmentHelper.getEnchantmentLevel(Enchantments.INFINITY, stack) == 0)
                     stack.damageItem(1, playerIn, this::onBroken);
 
                 playerIn.addStat(Stats.ITEM_USED.get(this));
                 playerIn.getCooldownTracker().setCooldown(this, 40);
-                playerIn.sendStatusMessage(pos.getText().tpSuccess(), true);
-                pos.addParticles(worldIn);
+                playerIn.sendStatusMessage(container.getText().tpSuccess(), true);
             }
-            else return ActionResult.resultFail(stack);
+            else {
+                playerIn.sendStatusMessage(container.getText().tpFail(), true);
+                return ActionResult.resultFail(stack);
+            }
         }
         return ActionResult.resultConsume(stack);
     }

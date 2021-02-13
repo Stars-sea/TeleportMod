@@ -3,6 +3,7 @@ package com.github.star_sea.teleport.common;
 import com.github.star_sea.teleport.item.ItemManager;
 import com.github.star_sea.teleport.util.Pos;
 import com.github.star_sea.teleport.util.PosCache;
+import com.github.star_sea.teleport.util.PosContainer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -23,7 +24,7 @@ public final class EntityEventHandler {
     public static void onPlayerDied(PlayerEvent.Clone event) {
         PlayerEntity player = event.getPlayer();
         if (event.isWasDeath() && !player.getEntityWorld().isRemote)
-            PosCache.put(player.getPersistentData(), new Pos(event.getOriginal()));
+            PosCache.put(player.getPersistentData(), new PosContainer(event.getOriginal()));
     }
 
     @SubscribeEvent
